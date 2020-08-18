@@ -1,6 +1,8 @@
 # MushroomLamp
 Code for mushroom lamp (https://www.reddit.com/r/FastLED/comments/i375fm/psychedelic_mushroom_lamp/)
 
+Button: First button press turns the lights on and begins the slow changing of the colors, second button press freezes the lights in their current state, and the third button press turns the lights off.
+
 There are 4 variables which can be configured and are as follows:
 
 NUM_LEDS        : Total no of LEDS present in the LED strip of device
