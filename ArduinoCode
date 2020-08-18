@@ -1,0 +1,140 @@
+#include "FastLED.h"
+
+//---------------------------------DEFINE------------------------------//
+#define NUM_LEDS 3                       //Total no of LEDS
+#define PIN 26                           //Data pin for LEDS
+#define button_pin 16                    //Pin connected to the push button
+#define transitiondelay 20               //The delay between transition from one color to another (in milliseconds)
+
+//---------------------------------------------------------------------//
+//---------------------------------OBJECT------------------------------//
+
+CRGB leds[NUM_LEDS];
+
+//---------------------------------------------------------------------//
+//-------------------------------FUNCTIONS-----------------------------//
+
+void setup()
+{
+  Serial.begin(115200);                            //Begin Serial Communication
+  FastLED.addLeds<WS2811, PIN, RGB>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip ); // Initialize the LED strip
+  pinMode(button_pin, INPUT_PULLUP);               //Iniitalize the push button pin
+  setAll(0, 0, 0);                                 //Set the brightness to 0
+}
+
+void loop() {
+  if (digitalRead(button_pin) == 0) {               //If button is presed the start the LEDs
+    Serial.println("Pattern Started");
+    delay(500);
+    while (1) {
+      Serial.println("Running");                    //LEDs are running
+      rainbowCycle(transitiondelay);                //The parameter passed to this function is delay between transition, Higher this value is slower will be the transition.
+      if (digitalRead(button_pin) == 0) {           //If the button is pressed again then cease the color
+        Serial.println("Pattern Freezed");          //Pattern is freezed right now
+        delay(500);
+        while (1) {                           
+          delay(2);
+          if (digitalRead(button_pin) == 0) {       //On third button push, turn off the leds
+            Serial.println("Pattern Stopped");      
+            setAll(0, 0, 0);
+            delay(500);
+            delay(500);
+            while (1) {
+              delay(1);
+              if (digitalRead(button_pin) == 0) {   //On fourth press brek the loop and restart from the begning.
+                delay(100);
+                if (digitalRead(button_pin) == 0) {
+                  break;
+                }
+              }
+            }
+            break;
+          }
+        }
+        break;
+      }
+    }
+  }
+}
+
+//---------------------------------------------------------------------//
+
+void rainbowCycle(int SpeedDelay) {
+  byte *c;
+  uint16_t i, j;
+
+  for (j = 0; j < 256 * 5; j++) {                     // 5 cycles of all colors on wheel
+    for (i = 0; i < NUM_LEDS; i++) {
+      c = Wheel(((i * 256 / NUM_LEDS) + j) & 255);
+      setPixel(i, *c, *(c + 1), *(c + 2));
+      if (digitalRead(button_pin) == 0) {
+        return;
+      }
+    }
+    showStrip();
+    delay(SpeedDelay);
+  }
+}
+
+//---------------------------------------------------------------------//
+
+byte * Wheel(byte WheelPos) {
+  static byte c[3];
+
+  if (WheelPos < 85) {
+    c[0] = WheelPos * 3;
+    c[1] = 255 - WheelPos * 3;
+    c[2] = 0;
+  } else if (WheelPos < 170) {
+    WheelPos -= 85;
+    c[0] = 255 - WheelPos * 3;
+    c[1] = 0;
+    c[2] = WheelPos * 3;
+  } else {
+    WheelPos -= 170;
+    c[0] = 0;
+    c[1] = WheelPos * 3;
+    c[2] = 255 - WheelPos * 3;
+  }
+
+  return c;
+}
+
+//---------------------------------------------------------------------//
+
+void showStrip() {
+#ifdef ADAFRUIT_NEOPIXEL_H
+  // NeoPixel
+  strip.show();
+#endif
+#ifndef ADAFRUIT_NEOPIXEL_H
+  // FastLED
+  FastLED.show();
+#endif
+}
+
+//---------------------------------------------------------------------//
+
+void setPixel(int Pixel, byte red, byte green, byte blue) {
+#ifdef ADAFRUIT_NEOPIXEL_H
+  // NeoPixel
+  strip.setPixelColor(Pixel, strip.Color(red, green, blue));
+#endif
+#ifndef ADAFRUIT_NEOPIXEL_H
+  // FastLED
+  leds[Pixel].r = red;
+  leds[Pixel].g = green;
+  leds[Pixel].b = blue;
+#endif
+}
+
+//---------------------------------------------------------------------//
+
+void setAll(byte red, byte green, byte blue) {
+  for (int i = 0; i < NUM_LEDS; i++ ) {
+    setPixel(i, red, green, blue);
+  }
+  showStrip();
+}
+
+//---------------------------------------------------------------------//
